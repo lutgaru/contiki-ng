@@ -44,7 +44,7 @@
 /* Log configuration */
 #define LOG_MODULE "dtls"
 #define LOG_LEVEL  LOG_LEVEL_DTLS
-#include "dtls-log.h"
+//#include "dtls-log.h"
 #include "coap-log.h"
 
 static dtls_context_t the_dtls_context;
@@ -81,11 +81,11 @@ dtls_cipher_context_release(dtls_cipher_context_t *c)
 {
 }
 /*---------------------------------------------------------------------------*/
-void
-dtls_ticks(dtls_tick_t *t)
-{
-  *t = clock_time();
-}
+// void
+// dtls_ticks(dtls_tick_t *t)
+// {
+//   *t = clock_time();
+// }
 /*---------------------------------------------------------------------------*/
 int
 dtls_fill_random(uint8_t *buf, size_t len)
@@ -104,38 +104,40 @@ dtls_fill_random(uint8_t *buf, size_t len)
 /*---------------------------------------------------------------------------*/
 /* message retransmission */
 /*---------------------------------------------------------------------------*/
-static void
-dtls_retransmit_callback(void *ptr)
-{
-  dtls_context_t *ctx;
-  clock_time_t now;
-  clock_time_t next;
+// static void
+// dtls_retransmit_callback(void *ptr)
+// {
+//   dtls_context_t *ctx;
+//   clock_time_t now;
+//   clock_time_t next;
 
-  ctx = ptr;
-  now = clock_time();
-  /* Just one retransmission per timer scheduling */
-  dtls_check_retransmit(ctx, &next, 0);
+//   ctx = ptr;
+//   now = clock_time();
+//   /* Just one retransmission per timer scheduling */
+//   dtls_check_retransmit(ctx, &next);
 
-  /* need to set timer to some value even if no nextpdu is available */
-  if(next != 0) {
-    ctimer_set(&ctx->support.retransmit_timer,
-               next <= now ? 1 : next - now,
-               dtls_retransmit_callback, ctx);
-  }
-}
+//   /* need to set timer to some value even if no nextpdu is available */
+//   if(next != 0) {
+//     // ctimer_set(&ctx->retransmit_timer,
+//     //            next <= now ? 1 : next - now,
+//     //            dtls_retransmit_callback, ctx);
+//     etimer_set(&ctx->retransmit_timer,next <= now ? 1 : next - now);
+//   }
+// }
 /*---------------------------------------------------------------------------*/
 void
 dtls_set_retransmit_timer(dtls_context_t *ctx, unsigned int timeout)
 {
-  ctimer_set(&ctx->support.retransmit_timer, timeout,
-             dtls_retransmit_callback, ctx);
+  // ctimer_set(&ctx->retransmit_timer, timeout,
+  //            dtls_retransmit_callback, ctx);
+  etimer_set(&ctx->retransmit_timer,timeout);           
 }
 /*---------------------------------------------------------------------------*/
-void
-dtls_session_init(session_t *sess)
-{
-  memset(sess, 0, sizeof(session_t));
-}
+// void
+// dtls_session_init(session_t *sess)
+// {
+//   memset(sess, 0, sizeof(session_t));
+// }
 /*---------------------------------------------------------------------------*/
 int
 dtls_session_equals(const session_t *a, const session_t *b)

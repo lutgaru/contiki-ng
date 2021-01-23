@@ -44,9 +44,9 @@
 
 #define DTLS_LOG_CONF_PATH "coap-log.h"
 
-#include "coap-endpoint.h"
+//#include "coap-endpoint.h"
 
-typedef coap_endpoint_t session_t;
+//typedef coap_endpoint_t session_t;
 
 #include "sys/ctimer.h"
 #include <stdint.h>
