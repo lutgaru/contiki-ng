@@ -55,9 +55,10 @@
 #define LOG_LEVEL  LOG_LEVEL_APP
 
 /* FIXME: This server address is hard-coded for Cooja and link-local for unconnected border router. */
-#define SERVER_EP "coap://[fe80::212:7402:0002:0202]"
+//#define SERVER_EP "coaps://[fd00::1]"
+#define SERVER_EP "coaps://[fe80::201:1:1:1]"
 
-#define TOGGLE_INTERVAL 10
+#define TOGGLE_INTERVAL 1
 
 PROCESS(er_example_client, "Erbium Example Client");
 AUTOSTART_PROCESSES(&er_example_client);
@@ -68,7 +69,7 @@ static struct etimer et;
 #define NUMBER_OF_URLS 4
 /* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
 char *service_urls[NUMBER_OF_URLS] =
-{ ".well-known/core", "/actuators/toggle", "battery/", "error/in//path" };
+{ "/test/hello", "/actuators/toggle", "battery/", "error/in//path" };
 #if PLATFORM_HAS_BUTTON
 static int uri_switch = 0;
 #endif
@@ -90,12 +91,14 @@ client_chunk_handler(coap_message_t *response)
 }
 PROCESS_THREAD(er_example_client, ev, data)
 {
-  static coap_endpoint_t server_ep;
   PROCESS_BEGIN();
+  static coap_endpoint_t server_ep;
 
   static coap_message_t request[1];      /* This way the packet can be treated as pointer as usual. */
 
   coap_endpoint_parse(SERVER_EP, strlen(SERVER_EP), &server_ep);
+
+  coap_endpoint_connect(&server_ep);
 
   etimer_set(&et, TOGGLE_INTERVAL * CLOCK_SECOND);
 
@@ -109,12 +112,12 @@ PROCESS_THREAD(er_example_client, ev, data)
   while(1) {
     PROCESS_YIELD();
 
-    if(etimer_expired(&et)) {
+    if(etimer_expired(&et) && coap_endpoint_is_connected(&server_ep)) {
       printf("--Toggle timer--\n");
 
       /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
-      coap_init_message(request, COAP_TYPE_CON, COAP_POST, 0);
-      coap_set_header_uri_path(request, service_urls[1]);
+      coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+      coap_set_header_uri_path(request, service_urls[0]);
 
       const char msg[] = "Toggle!";
 

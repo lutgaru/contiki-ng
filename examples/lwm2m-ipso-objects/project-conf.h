@@ -39,6 +39,10 @@
 #define LWM2M_DEVICE_SERIAL_NO    "LWM2M_DEVICE_SERIAL_NO"
 #define PLATFORM_REBOOT watchdog_reboot
 #endif
+#define LOG_CONF_LEVEL_COAP		LOG_LEVEL_DBG
+#define LWM2M_SERVER_ADDRESS           "coaps://[fd00::1]"
+#define COAP_DTLS_PSK_DEFAULT_IDENTITY "user"
+#define COAP_DTLS_PSK_DEFAULT_KEY      "secret"
 
 #if BOARD_SENSORTAG
 /* Real sensor is present... */

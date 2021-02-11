@@ -101,7 +101,7 @@ PROCESS_THREAD(er_example_server, ev, data)
   coap_activate_resource(&res_mirror, "debug/mirror");
   coap_activate_resource(&res_chunks, "test/chunks");
   coap_activate_resource(&res_separate, "test/separate");
-  coap_activate_resource(&res_push, "test/push");
+  //coap_activate_resource(&res_push, "test/push");
 #if PLATFORM_HAS_BUTTON
   coap_activate_resource(&res_event, "sensors/button");
 #endif /* PLATFORM_HAS_BUTTON */

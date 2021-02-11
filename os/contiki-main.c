@@ -121,6 +121,10 @@ main(void)
 #if NETSTACK_CONF_WITH_IPV6
   {
     uip_ds6_addr_t *lladdr;
+    #ifdef WITHCUSTOMADD
+    linkaddr_t ss={{ 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x09 }};
+    linkaddr_set_node_addr(&ss);
+    #endif
     memcpy(&uip_lladdr.addr, &linkaddr_node_addr, sizeof(uip_lladdr.addr));
     process_start(&tcpip_process, NULL);
 

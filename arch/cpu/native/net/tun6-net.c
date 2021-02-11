@@ -66,7 +66,11 @@
 
 static const char *config_ipaddr = "fd00::1/64";
 /* Allocate some bytes in RAM and copy the string */
+#ifdef TUN_DEVICE
+static char config_tundev[IFNAMSIZ + 1] = TUN_DEVICE;
+#else
 static char config_tundev[IFNAMSIZ + 1] = "tun0";
+#endif 
 
 
 #ifndef __CYGWIN__

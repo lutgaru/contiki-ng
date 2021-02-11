@@ -38,10 +38,11 @@
 
 #ifndef PROJECT_CONF_H_
 #define PROJECT_CONF_H_
-
+#define LOG_CONF_LEVEL_COAP		LOG_LEVEL_DBG
 #define LOG_LEVEL_APP LOG_LEVEL_DBG
 
 /* Enable client-side support for COAP observe */
 #define COAP_OBSERVE_CLIENT            1
-
+#define COAP_DTLS_PSK_DEFAULT_IDENTITY "user"
+#define COAP_DTLS_PSK_DEFAULT_KEY "password"
 #endif /* PROJECT_CONF_H_ */
