@@ -38,9 +38,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "net/routing/routing.h"
 #include <string.h>
 #include "contiki.h"
 #include "contiki-net.h"
+#include "testglobal.h"
 #include "coap-engine.h"
 #include "coap-blocking-api.h"
 #if PLATFORM_SUPPORTS_BUTTON_HAL
@@ -56,15 +58,19 @@
 
 /* FIXME: This server address is hard-coded for Cooja and link-local for unconnected border router. */
 //#define SERVER_EP "coaps://[fd00::1]"
-#define SERVER_EP "coaps://[fe80::201:1:1:1]"
+#define SERVER_EP "coaps://[fd00::201:1:1:1]"
+//#define SERVER_EP "coaps://[fe80::201:1:1:1]"
 
-#define TOGGLE_INTERVAL 1
+extern coap_resource_t
+  test_metric;
+
+#define TOGGLE_INTERVAL 10
 
 PROCESS(er_example_client, "Erbium Example Client");
 AUTOSTART_PROCESSES(&er_example_client);
 
 static struct etimer et;
-
+rtimer_clock_t timerdiff[2];
 /* Example URIs that can be queried. */
 #define NUMBER_OF_URLS 4
 /* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
@@ -94,11 +100,14 @@ PROCESS_THREAD(er_example_client, ev, data)
   PROCESS_BEGIN();
   static coap_endpoint_t server_ep;
 
+  coap_activate_resource(&test_metric, "test/metric");
+
   static coap_message_t request[1];      /* This way the packet can be treated as pointer as usual. */
 
+  //NETSTACK_ROUTING.root_start();
   coap_endpoint_parse(SERVER_EP, strlen(SERVER_EP), &server_ep);
-
   coap_endpoint_connect(&server_ep);
+  printf("%" PRIu64 "\n",RTIMER_NOW());
 
   etimer_set(&et, TOGGLE_INTERVAL * CLOCK_SECOND);
 
@@ -112,9 +121,16 @@ PROCESS_THREAD(er_example_client, ev, data)
   while(1) {
     PROCESS_YIELD();
 
+     //if (etimer_expired(&et)) {
+    //   coap_endpoint_connect(&server_ep);
+       //etimer_reset(&et);
+       //printf("reinciando timer");
+     //}
+    //printf("%d",coap_endpoint_is_connected(&server_ep));
     if(etimer_expired(&et) && coap_endpoint_is_connected(&server_ep)) {
       printf("--Toggle timer--\n");
-
+      printf("%" PRIu64 "\n", timerdiff[0]);
+      printf("%" PRIu64 "\n", timerdiff[1]);
       /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
       coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
       coap_set_header_uri_path(request, service_urls[0]);
@@ -129,7 +145,7 @@ PROCESS_THREAD(er_example_client, ev, data)
       COAP_BLOCKING_REQUEST(&server_ep, request, client_chunk_handler);
 
       printf("\n--Done--\n");
-
+      //coap_endpoint_disconnect(&server_ep);
       etimer_reset(&et);
 
 #if PLATFORM_HAS_BUTTON
@@ -155,7 +171,11 @@ PROCESS_THREAD(er_example_client, ev, data)
       printf("\n--Done--\n");
 
       uri_switch = (uri_switch + 1) % NUMBER_OF_URLS;
+      //coap_endpoint_connect(&server_ep);
 #endif /* PLATFORM_HAS_BUTTON */
+    }
+    else {
+      etimer_reset(&et);
     }
   }
 

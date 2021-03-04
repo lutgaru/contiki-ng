@@ -58,6 +58,7 @@
 #include "coap-constants.h"
 #include "coap-keystore.h"
 #include "coap-keystore-simple.h"
+#include "../../../../examples/coap/coap-example-client/testglobal.h"
 
 /* Log configuration */
 #include "coap-log.h"
@@ -300,6 +301,8 @@ coap_endpoint_connect(coap_endpoint_t *ep)
 
   /* setup all address info here... should be done to connect */
   if(dtls_context) {
+    //rtimer_clock_t timerdiff[2];
+    timerdiff[0]=RTIMER_NOW();
     dtls_connect(dtls_context, ep);
     return 1;
   }

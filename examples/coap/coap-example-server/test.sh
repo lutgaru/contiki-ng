@@ -12,7 +12,7 @@ case "$1" in
 esac
 ./coap-example-server.native & 
 sleep 2s
-coap-client -m get "coap://[fd00::302:304:506:709]/test/hello" | lolcat && coap-client -u "user" -k "password" -m get "coaps://[fd00::302:304:506:709]/test/hello" | lolcat
+coap-client -m get "coap://[fd00::302:304:506:708]/test/hello" | lolcat && coap-client -u "user" -k "password" -m get "coaps://[fd00::302:304:506:708]/test/hello" | lolcat
 #cd ../coap-example-client
 #make clean
 # case "$1" in
