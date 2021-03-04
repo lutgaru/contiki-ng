@@ -11,7 +11,20 @@ ifeq ($(MAKE_WITH_DTLS),1)
  CFLAGS += -DWITH_DTLS=1
 
  MODULES += os/net/app-layer/coap/tinydtls-support
- MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc giftcofb}
+
+ifeq ($(MAKE_WITH_GIFTCOFB),1)
+    ${info with giftcofb}
+    MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc giftcofb}
+
+else ifeq ($(MAKE_WITH_XOODYAK),1)
+    ${info with xoodyak}
+    MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc xoodyak}
+
+else 
+    ${info with aes}
+    MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc giftcofb}
+
+endif
 
  MAKE_COAP_DTLS_KEYSTORE_NONE   := 0
  MAKE_COAP_DTLS_KEYSTORE_SIMPLE := 1
