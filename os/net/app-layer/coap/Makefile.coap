@@ -20,6 +20,10 @@ else ifeq ($(MAKE_WITH_XOODYAK),1)
     ${info with xoodyak}
     MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc xoodyak}
 
+else ifeq ($(MAKE_WITH_ASCON128),1)
+    ${info with ascon128v12}
+    MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc ascon/ascon128v12/ref}
+
 else 
     ${info with aes}
     MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc giftcofb}
