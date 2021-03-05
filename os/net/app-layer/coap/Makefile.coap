@@ -24,6 +24,10 @@ else ifeq ($(MAKE_WITH_ASCON128),1)
     ${info with ascon128v12}
     MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc ascon/ascon128v12/ref}
 
+else ifeq ($(MAKE_WITH_ASCON128A),1)
+    ${info with ascon128av12}
+    MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc ascon/ascon128av12/ref}
+
 else ifeq ($(MAKE_WITH_ASCON80),1)
     ${info with ascon128v12}
     MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc ascon/ascon80pqv12/ref}
@@ -33,8 +37,17 @@ else ifeq ($(MAKE_WITH_GRAIN128),1)
     MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc grain}
 
 else ifeq ($(MAKE_WITH_TINYJAMBU128),1)
-    ${info with grain128v12}
+    ${info with tinyjambu128}
     MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc tinyjambu/tinyjambu128}
+
+else ifeq ($(MAKE_WITH_TINYJAMBU192),1)
+    ${info with tinyjambu192}
+    MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc tinyjambu/tinyjambu192/ref}
+
+else ifeq ($(MAKE_WITH_TINYJAMBU256),1)
+    ${info with tinyjambu256}
+    MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc tinyjambu/tinyjambu256/ref}
+
 
 else 
     ${info with aes}
