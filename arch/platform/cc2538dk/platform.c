@@ -50,7 +50,7 @@
 #include "dev/slip.h"
 #include "dev/cc2538-rf.h"
 #include "dev/udma.h"
-#include "dev/crypto.h"
+#include "dev/cc2538-crypto.h"
 #include "dev/button-hal.h"
 #include "usb/usb-serial.h"
 #include "lib/random.h"
@@ -151,7 +151,7 @@ platform_init_stage_two()
   udma_init();
 
 #if CRYPTO_CONF_INIT
-  crypto_init();
+  cc2538_crypto_init();
   crypto_disable();
 #endif
 

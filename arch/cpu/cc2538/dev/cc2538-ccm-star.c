@@ -36,7 +36,7 @@
  * Implementation of the AES-CCM* driver for the CC2538 SoC
  */
 #include "contiki.h"
-#include "dev/ccm.h"
+#include "dev/cc2538-ccm.h"
 #include "dev/cc2538-aes-128.h"
 #include "dev/cc2538-ccm-star.h"
 

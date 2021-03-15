@@ -49,7 +49,7 @@
 #define AES_H_
 
 #include "contiki.h"
-#include "dev/crypto.h"
+#include "dev/cc2538-crypto.h"
 
 #include <stdbool.h>
 #include <stdint.h>

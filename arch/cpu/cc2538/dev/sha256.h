@@ -49,7 +49,7 @@
 #define SHA256_H_
 
 #include "contiki.h"
-#include "dev/crypto.h"
+#include "dev/cc2538-crypto.h"
 
 #include <stdint.h>
 /*---------------------------------------------------------------------------*/

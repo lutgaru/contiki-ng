@@ -76,7 +76,7 @@
 
 /** \brief Enables and resets the AES/SHA cryptoprocessor
  */
-void crypto_init(void);
+void cc2538_crypto_init(void);
 
 /** \brief Enables the AES/SHA cryptoprocessor
  */

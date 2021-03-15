@@ -43,7 +43,7 @@
 #include "contiki.h"
 #include "sys/cc.h"
 #include "dev/rom-util.h"
-#include "dev/ccm.h"
+#include "dev/cc2538-ccm.h"
 
 #include <stdbool.h>
 #include <stdint.h>

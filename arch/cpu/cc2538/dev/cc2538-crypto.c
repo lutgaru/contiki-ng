@@ -38,7 +38,7 @@
 #include "contiki.h"
 #include "dev/sys-ctrl.h"
 #include "dev/nvic.h"
-#include "dev/crypto.h"
+#include "dev/cc2538-crypto.h"
 #include "dev/aes.h"
 #include "reg.h"
 #include "lpm.h"
@@ -74,7 +74,7 @@ permit_pm1(void)
 }
 /*---------------------------------------------------------------------------*/
 void
-crypto_init(void)
+cc2538_crypto_init(void)
 {
   volatile int i;
 
