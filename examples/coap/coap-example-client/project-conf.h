@@ -38,10 +38,10 @@
 
 #ifndef PROJECT_CONF_H_
 #define PROJECT_CONF_H_
-#include <bits/stdint-uintn.h>
+//#include <bits/stdint-uintn.h>
 #include <stdint.h>
-#define LOG_CONF_LEVEL_COAP		LOG_LEVEL_DBG
-#define LOG_LEVEL_APP LOG_LEVEL_INFO
+//#define LOG_CONF_LEVEL_COAP		LOG_LEVEL_INFO
+#define LOG_LEVEL_APP LOG_LEVEL_NONE
 //#define LOG_LEVEL_RPL LOG_LEVEL_DBG
 
 /* Enable client-side support for COAP observe */
