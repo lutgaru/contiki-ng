@@ -14,10 +14,11 @@
 #
 ######################################################################
 
-path add $CWD
+#path add $CWD
 emulation CreateWirelessMedium "wireless"
-$domain = `emulation AddSyncDomain`
-wireless SetSyncDomainFromEmulation $domain
+#$domain = `emulation AddSyncDomain`
+#wireless SetSyncDomainFromEmulation $domain
+#wireless SetRangeWirelessFunction 11
 
 # The radio is using a range-based medium (with the `Range` set to `11`)
 # If not set, the default SimpleMediumFunction will be used (where range is not relevant)
@@ -27,8 +28,9 @@ wireless SetRangeWirelessFunction 11
 $bin=@udp-server.cc2538dk
 $name="server"
 i $ORIGIN/cc2538-node.resc
+connector Connect radio wireless
 wireless SetPosition radio 0 0 0
-machine SyncUnit 100
+#machine SyncUnit 100
 showAnalyzer sysbus.uart0
 mach clear
 ########################## UDP SERVER - end ##########################
@@ -36,10 +38,11 @@ mach clear
 ######################### UDP CLIENT - begin #########################
 $bin=@udp-client.cc2538dk
 $name="client"
-
 i $ORIGIN/cc2538-node.resc
-wireless SetPosition radio 10 0 0
-machine SyncUnit 110
+connector Connect radio wireless
+wireless SetPosition radio 1 0 0
+#machine SyncUnit 110
 showAnalyzer sysbus.uart0
 mach clear
 ########################## UDP CLIENT - end ##########################
+start
