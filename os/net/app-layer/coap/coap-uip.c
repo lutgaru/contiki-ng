@@ -302,7 +302,8 @@ coap_endpoint_connect(coap_endpoint_t *ep)
   /* setup all address info here... should be done to connect */
   if(dtls_context) {
     //rtimer_clock_t timerdiff[2];
-    timerdiff[0]=RTIMER_NOW();
+    //timerdiff[0]=RTIMER_NOW();
+    printf("htinit:%lu\n",RTIMER_NOW());
     dtls_connect(dtls_context, ep);
     return 1;
   }

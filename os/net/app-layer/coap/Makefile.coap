@@ -17,6 +17,9 @@ ifeq ($(MAKE_WITH_GIFTCOFB),1)
     ifeq ($(TARGET),cc2538dk)
         ${info $(TARGET)}
         MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc giftcofb/armcortexm_fast}
+    else ifeq ($(TARGET),cc26x0-cc13x0)
+        ${info $(TARGET)}
+        MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc giftcofb/armcortexm_fast}
     else
         ${info native}
         MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc giftcofb/ref}
@@ -25,6 +28,9 @@ ifeq ($(MAKE_WITH_GIFTCOFB),1)
 
 else ifeq ($(MAKE_WITH_XOODYAK),1)
     ifeq ($(TARGET),cc2538dk)
+        ${info $(TARGET)}
+        MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc xoodyak/XKCP-ARMv7M}
+    else ifeq ($(TARGET),cc26x0-cc13x0)
         ${info $(TARGET)}
         MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc xoodyak/XKCP-ARMv7M}
     else
@@ -37,6 +43,9 @@ else ifeq ($(MAKE_WITH_ASCON128),1)
     ifeq ($(TARGET),cc2538dk)
         ${info $(TARGET)}
         MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc ascon/ascon128v12/bi32_arm}
+    else ifeq ($(TARGET),cc26x0-cc13x0)
+        ${info $(TARGET)}
+        MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc ascon/ascon128v12/bi32_arm}
     else
         ${info native}
         MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc ascon/ascon128v12/ref}
@@ -47,14 +56,20 @@ else ifeq ($(MAKE_WITH_ASCON128A),1)
     ifeq ($(TARGET),cc2538dk)
         ${info $(TARGET)}
         MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc ascon/ascon128av12/bi32_arm}
+    else ifeq ($(TARGET),cc26x0-cc13x0)
+        ${info $(TARGET)}
+        MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc ascon/ascon128av12/bi32_arm}
     else
         ${info native}
-        MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc ascon/ascon128va12/ref}
+        MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc ascon/ascon128av12/ref}
     endif
 
 else ifeq ($(MAKE_WITH_ASCON80),1)
     ${info with ascon80v12}
     ifeq ($(TARGET),cc2538dk)
+        ${info $(TARGET)}
+        MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc ascon/ascon80pqv12/bi32_arm}
+    else ifeq ($(TARGET),cc26x0-cc13x0)
         ${info $(TARGET)}
         MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc ascon/ascon80pqv12/bi32_arm}
     else
@@ -67,6 +82,9 @@ else ifeq ($(MAKE_WITH_GRAIN128),1)
     ifeq ($(TARGET),cc2538dk)
         ${info $(TARGET)}
         MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc grain/opt32}
+    else ifeq ($(TARGET),cc26x0-cc13x0)
+        ${info $(TARGET)}
+        MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc grain/opt32}
     else
         ${info native}
         MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc grain/ref}
@@ -75,6 +93,9 @@ else ifeq ($(MAKE_WITH_GRAIN128),1)
 else ifeq ($(MAKE_WITH_TINYJAMBU128),1)
     ${info with tinyjambu128}
     ifeq ($(TARGET),cc2538dk)
+        ${info $(TARGET)}
+        MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc tinyjambu/tinyjambu128/opt}
+    else ifeq ($(TARGET),cc26x0-cc13x0)
         ${info $(TARGET)}
         MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc tinyjambu/tinyjambu128/opt}
     else
@@ -87,6 +108,9 @@ else ifeq ($(MAKE_WITH_TINYJAMBU192),1)
     ifeq ($(TARGET),cc2538dk)
         ${info $(TARGET)}
         MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc tinyjambu/tinyjambu192/opt}
+    else ifeq ($(TARGET),cc26x0-cc13x0)
+        ${info $(TARGET)}
+        MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc tinyjambu/tinyjambu192/opt}
     else
         ${info native}
         MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc tinyjambu/tinyjambu192/ref}
@@ -95,6 +119,9 @@ else ifeq ($(MAKE_WITH_TINYJAMBU192),1)
 else ifeq ($(MAKE_WITH_TINYJAMBU256),1)
     ${info with tinyjambu256}
     ifeq ($(TARGET),cc2538dk)
+        ${info $(TARGET)}
+        MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc tinyjambu/tinyjambu256/opt}
+    else ifeq ($(TARGET),cc26x0-cc13x0)
         ${info $(TARGET)}
         MODULES += $(TINYDTLS_PATH) ${addprefix $(TINYDTLS_PATH)/,aes sha2 ecc tinyjambu/tinyjambu256/opt}
     else

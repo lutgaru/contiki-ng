@@ -39,12 +39,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "net/routing/routing.h"
+#include "sys/rtimer.h"
 #include <string.h>
 #include "contiki.h"
 #include "contiki-net.h"
 #include "testglobal.h"
 #include "coap-engine.h"
 #include "coap-blocking-api.h"
+//#include "tsch-schedule.h"
+#include "uip-ds6-nbr.h"
 #if PLATFORM_SUPPORTS_BUTTON_HAL
 #include "dev/button-hal.h"
 #else
@@ -57,14 +60,17 @@
 #define LOG_LEVEL  LOG_LEVEL_APP
 
 /* FIXME: This server address is hard-coded for Cooja and link-local for unconnected border router. */
-//#define SERVER_EP "coaps://[fd00::1]"
-#define SERVER_EP "coaps://[fe80::200:0:0:1]"
-//#define SERVER_EP "coaps://[fe80::201:1:1:1]"
+#define SERVER_EP "coaps://[fd00::212:4b00:a55:dd05]"
+//#define SERVER_EP "coaps://[fd00::200:0:0:1]"
+//#define SERVER_EP "coaps://[fd00::203:3:3:3]"
+//#define SERVER_EP "coaps://[fd00::200:0:0:1]"
+static struct rtimer timer_rtimer;
+static int second_counter=0;
 
 extern coap_resource_t
   test_metric;
 
-#define TOGGLE_INTERVAL 1
+#define TOGGLE_INTERVAL 0.001
 
 PROCESS(er_example_client, "Erbium Example Client");
 AUTOSTART_PROCESSES(&er_example_client);
@@ -79,6 +85,25 @@ char *service_urls[NUMBER_OF_URLS] =
 #if PLATFORM_HAS_BUTTON
 static int uri_switch = 0;
 #endif
+
+static const char *
+ds6_nbr_state_to_str(uint8_t state)
+{
+  switch(state) {
+    case NBR_INCOMPLETE:
+      return "Incomplete";
+    case NBR_REACHABLE:
+      return "Reachable";
+    case NBR_STALE:
+      return "Stale";
+    case NBR_DELAY:
+      return "Delay";
+    case NBR_PROBE:
+      return "Probe";
+    default:
+      return "Unknown";
+  }
+}
 
 /* This function is will be passed to COAP_BLOCKING_REQUEST() to handle responses. */
 void
@@ -99,17 +124,18 @@ PROCESS_THREAD(er_example_client, ev, data)
 {
   PROCESS_BEGIN();
   static coap_endpoint_t server_ep;
-
+  static uint8_t connect_intent = 0;
   coap_activate_resource(&test_metric, "test/metric");
-
+  NETSTACK_ROUTING.root_start();
   static coap_message_t request[1];      /* This way the packet can be treated as pointer as usual. */
 
   //NETSTACK_ROUTING.root_start();
   coap_endpoint_parse(SERVER_EP, strlen(SERVER_EP), &server_ep);
-  coap_endpoint_connect(&server_ep);
-  printf("%" PRIu64 "\n",RTIMER_NOW());
+  //coap_endpoint_connect(&server_ep);
+  printf("inicio:%lu\n",RTIMER_NOW());
 
   etimer_set(&et, TOGGLE_INTERVAL * CLOCK_SECOND);
+  //etimer_reset(&et);
 
 #if PLATFORM_HAS_BUTTON
 #if !PLATFORM_SUPPORTS_BUTTON_HAL
@@ -121,17 +147,12 @@ PROCESS_THREAD(er_example_client, ev, data)
   while(1) {
     PROCESS_YIELD();
 
-     //if (etimer_expired(&et)) {
-    //   coap_endpoint_connect(&server_ep);
-       //etimer_reset(&et);
-       //printf("reinciando timer");
-     //}
-    //printf("%d",coap_endpoint_is_connected(&server_ep));
     if(etimer_expired(&et) && coap_endpoint_is_connected(&server_ep)) {
+      printf("seguro:%lu\n",RTIMER_NOW());
+      printf("second: %lu\n",RTIMER_SECOND);
+      printf("%d\n",coap_endpoint_is_connected(&server_ep));
       printf("--Toggle timer--\n");
-      printf("%" PRIu64 "\n", timerdiff[0]);
-      printf("%" PRIu64 "\n", timerdiff[1]);
-      /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
+      
       coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
       coap_set_header_uri_path(request, service_urls[0]);
 
@@ -145,36 +166,48 @@ PROCESS_THREAD(er_example_client, ev, data)
       COAP_BLOCKING_REQUEST(&server_ep, request, client_chunk_handler);
 
       printf("\n--Done--\n");
-      //coap_endpoint_disconnect(&server_ep);
-      etimer_reset(&et);
-
-#if PLATFORM_HAS_BUTTON
-#if PLATFORM_SUPPORTS_BUTTON_HAL
-    } else if(ev == button_hal_release_event) {
-#else
-    } else if(ev == sensors_event && data == &button_sensor) {
-#endif
-
-      /* send a request to notify the end of the process */
-
-      coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
-      coap_set_header_uri_path(request, service_urls[uri_switch]);
-
-      printf("--Requesting %s--\n", service_urls[uri_switch]);
-
-      LOG_INFO_COAP_EP(&server_ep);
-      LOG_INFO_("\n");
-
-      COAP_BLOCKING_REQUEST(&server_ep, request,
-                            client_chunk_handler);
-
-      printf("\n--Done--\n");
-
-      uri_switch = (uri_switch + 1) % NUMBER_OF_URLS;
-      //coap_endpoint_connect(&server_ep);
-#endif /* PLATFORM_HAS_BUTTON */
     }
-    else {
+    else if(etimer_expired(&et)){
+      if(uip_sr_num_nodes() > 0) {
+      uip_sr_node_t *link;
+      uip_ipaddr_t child_ipaddr;
+      /* Our routing links */
+      link = uip_sr_node_head();
+      while(link != NULL) {
+        NETSTACK_ROUTING.get_sr_node_ipaddr(&child_ipaddr, link);
+        if((child_ipaddr.u8[15] == server_ep.ipaddr.u8[15])){
+          if ((connect_intent == 0)) {
+            LOG_INFO("alcanzable\n");
+            coap_endpoint_connect(&server_ep);
+            uiplib_ipaddr_print(&child_ipaddr);
+            connect_intent=1;
+            break;
+          }
+          else{
+            break;
+          }
+          // else if (connect_intent == 10000) {
+          //   printf("reintentando?\n");
+          //   printf("%d \n",coap_endpoint_connect(&server_ep));
+          //   connect_intent=1;
+          //   break;
+          // }
+          // else if (connect_intent == 9000) {
+          //   printf("se repite?\n");
+          //   coap_endpoint_disconnect(&server_ep);
+          //   connect_intent++;
+          //   break;
+          // }
+          // else{
+          //   connect_intent++;
+          //   break;
+          // }
+          //LOG_INFO("alcanzable\n");
+          
+        }
+        link = uip_sr_node_next(link);
+      }
+      } 
       etimer_reset(&et);
     }
   }
