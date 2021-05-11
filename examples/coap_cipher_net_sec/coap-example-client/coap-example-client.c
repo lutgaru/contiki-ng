@@ -79,10 +79,10 @@ AUTOSTART_PROCESSES(&er_example_client);
 static struct etimer et;
 rtimer_clock_t timerdiff[2];
 /* Example URIs that can be queried. */
-#define NUMBER_OF_URLS 4
+#define NUMBER_OF_URLS 5
 /* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
 char *service_urls[NUMBER_OF_URLS] =
-{ "/test/hello", "/actuators/toggle", "battery/", "error/in//path" };
+{ "/test/hello", "sensors/temperature", "battery/", "error/in//path", "/test/chunks" };
 #if PLATFORM_HAS_BUTTON
 static int uri_switch = 0;
 #endif
@@ -118,8 +118,11 @@ client_chunk_handler(coap_message_t *response)
   }
 
   int len = coap_get_payload(response, &chunk);
-
-  printf("|%.*s", len, (char *)chunk);
+  printf("%d\n",len);
+  //printf("|%.*x\n", len, (char *)chunk);
+  for(int x=0;x<len;x++){
+    printf(" %x",chunk[x]);
+  }
 }
 PROCESS_THREAD(er_example_client, ev, data)
 {
@@ -156,8 +159,8 @@ PROCESS_THREAD(er_example_client, ev, data)
       printf("%d\n",coap_endpoint_is_connected(&server_ep));
       printf("--Toggle timer--\n");
       
-      coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
-      coap_set_header_uri_path(request, service_urls[0]);
+      coap_init_message(request, COAP_TYPE_NON, COAP_GET, 0);
+      coap_set_header_uri_path(request, service_urls[1]);
 
       const char msg[] = "Toggle!";
 
@@ -169,7 +172,7 @@ PROCESS_THREAD(er_example_client, ev, data)
       COAP_BLOCKING_REQUEST(&server_ep, request, client_chunk_handler);
 
       printf("\n--Done--\n");
-      if(muestras<100){
+      if(muestras<0){
         muestras++;
         etimer_reset(&et);
       }

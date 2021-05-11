@@ -75,7 +75,9 @@ res_get_handler(coap_message_t *request, coap_message_t *response, uint8_t *buff
 
   /* Generate data until reaching CHUNKS_TOTAL. */
   while(strpos < preferred_size) {
-    strpos += snprintf((char *)buffer + strpos, preferred_size - strpos + 1, "|%ld|", (long) *offset);
+    //printf("ps:%d\n",*offset);
+    buffer[strpos]=10;//snprintf((char *)buffer + strpos, preferred_size - strpos + 1, "|%ld|", (long) *offset);
+    strpos ++;
   }
 
   /* snprintf() does not adjust return value if truncated by size. */
@@ -86,6 +88,7 @@ res_get_handler(coap_message_t *request, coap_message_t *response, uint8_t *buff
   if(*offset + (int32_t)strpos > CHUNKS_TOTAL) {
     strpos = CHUNKS_TOTAL - *offset;
   }
+  coap_set_header_content_format(response, APPLICATION_OCTET_STREAM);
   coap_set_payload(response, buffer, strpos);
 
   /* IMPORTANT for chunk-wise resources: Signal chunk awareness to REST engine. */

@@ -72,6 +72,7 @@ extern coap_resource_t
   test_metric;
 
 #define TOGGLE_INTERVAL 0.001
+#define NUMBERS_OF_NODES 1
 
 PROCESS(er_example_client, "Erbium Example Client");
 AUTOSTART_PROCESSES(&er_example_client);
@@ -127,6 +128,7 @@ PROCESS_THREAD(er_example_client, ev, data)
   static coap_endpoint_t server_ep;
   static uint8_t connect_intent = 0;
   static uint8_t muestras = 0;
+  static uint8_t node_conn=0;
   NETSTACK_RADIO.set_value(RADIO_PARAM_TXPOWER,-21);
   coap_activate_resource(&test_metric, "test/metric");
   //NETSTACK_ROUTING.root_start();
@@ -178,49 +180,49 @@ PROCESS_THREAD(er_example_client, ev, data)
     else{
       etimer_reset(&et);
     }
-    // else if(etimer_expired(&et)){
-    //   if(uip_sr_num_nodes() > 0) {
-    //   uip_sr_node_t *link;
-    //   uip_ipaddr_t child_ipaddr;
-    //   /* Our routing links */
-    //   link = uip_sr_node_head();
-    //   while(link != NULL) {
-    //     NETSTACK_ROUTING.get_sr_node_ipaddr(&child_ipaddr, link);
-    //     if((child_ipaddr.u8[15] == server_ep.ipaddr.u8[15])){
-    //       if ((connect_intent == 0)) {
-    //         LOG_INFO("alcanzable\n");
-    //         coap_endpoint_connect(&server_ep);
-    //         uiplib_ipaddr_print(&child_ipaddr);
-    //         connect_intent=1;
-    //         break;
-    //       }
-    //       else{
-    //         break;
-    //       }
-    //       // else if (connect_intent == 10000) {
-    //       //   printf("reintentando?\n");
-    //       //   printf("%d \n",coap_endpoint_connect(&server_ep));
-    //       //   connect_intent=1;
-    //       //   break;
-    //       // }
-    //       // else if (connect_intent == 9000) {
-    //       //   printf("se repite?\n");
-    //       //   coap_endpoint_disconnect(&server_ep);
-    //       //   connect_intent++;
-    //       //   break;
-    //       // }
-    //       // else{
-    //       //   connect_intent++;
-    //       //   break;
-    //       // }
-    //       //LOG_INFO("alcanzable\n");
+    else if(etimer_expired(&et)){
+      if(uip_sr_num_nodes() > 0) {
+      uip_sr_node_t *link;
+      uip_ipaddr_t child_ipaddr;
+      /* Our routing links */
+      link = uip_sr_node_head();
+      while(link != NULL) {
+        NETSTACK_ROUTING.get_sr_node_ipaddr(&child_ipaddr, link);
+        if((child_ipaddr.u8[15] == server_ep.ipaddr.u8[15])){
+          if ((connect_intent == 0)) {
+            LOG_INFO("alcanzable\n");
+            coap_endpoint_connect(&server_ep);
+            uiplib_ipaddr_print(&child_ipaddr);
+            connect_intent=1;
+            break;
+          }
+          else{
+            break;
+          }
+          // else if (connect_intent == 10000) {
+          //   printf("reintentando?\n");
+          //   printf("%d \n",coap_endpoint_connect(&server_ep));
+          //   connect_intent=1;
+          //   break;
+          // }
+          // else if (connect_intent == 9000) {
+          //   printf("se repite?\n");
+          //   coap_endpoint_disconnect(&server_ep);
+          //   connect_intent++;
+          //   break;
+          // }
+          // else{
+          //   connect_intent++;
+          //   break;
+          // }
+          //LOG_INFO("alcanzable\n");
           
-    //     }
-    //     link = uip_sr_node_next(link);
-    //   }
-    //   } 
-    //   etimer_reset(&et);
-    // }
+        }
+        link = uip_sr_node_next(link);
+      }
+      } 
+      etimer_reset(&et);
+    }
   }
 
   PROCESS_END();

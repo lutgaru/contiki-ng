@@ -59,9 +59,9 @@ rtimer_clock_t timerdiff[2];
  * The build system automatically compiles the resources in the corresponding sub-directory.
  */
 extern coap_resource_t
-  res_hello;
+  res_hello,
 //   res_mirror,
-//   res_chunks,
+  res_chunks;
 //   res_separate,
 //   res_push,
 //   res_event,
@@ -103,7 +103,7 @@ PROCESS_THREAD(er_example_server, ev, data)
    */
   coap_activate_resource(&res_hello, "test/hello");
   //coap_activate_resource(&res_mirror, "debug/mirror");
-  //coap_activate_resource(&res_chunks, "test/chunks");
+  coap_activate_resource(&res_chunks, "test/chunks");
   //coap_activate_resource(&res_separate, "test/separate");
   //coap_activate_resource(&res_push, "test/push");
 // #if PLATFORM_HAS_BUTTON
@@ -123,10 +123,10 @@ PROCESS_THREAD(er_example_server, ev, data)
 //   coap_activate_resource(&res_battery, "sensors/battery");
 //   SENSORS_ACTIVATE(battery_sensor);
 // #endif
-// #if PLATFORM_HAS_TEMPERATURE
-//   coap_activate_resource(&res_temperature, "sensors/temperature");
-//   SENSORS_ACTIVATE(temperature_sensor);
-// #endif
+ #if PLATFORM_HAS_TEMPERATURE
+   coap_activate_resource(&res_temperature, "sensors/temperature");
+   SENSORS_ACTIVATE(temperature_sensor);
+ #endif
 
   /* Define application-specific events here. */
   while(1) {
