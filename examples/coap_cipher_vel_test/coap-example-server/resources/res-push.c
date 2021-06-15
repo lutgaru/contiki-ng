@@ -41,6 +41,9 @@
 #include "coap-engine.h"
 #include "coap.h"
 
+//#ifndef NBYTES
+//#define NBYTES 4
+//#endif
 static void res_get_handler(coap_message_t *request, coap_message_t *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 static void res_periodic_handler(void);
 
@@ -50,13 +53,14 @@ PERIODIC_RESOURCE(res_push,
                   NULL,
                   NULL,
                   NULL,
-                  5000,
+                  500,
                   res_periodic_handler);
 
 /*
  * Use local resource state that is accessed by res_get_handler() and altered by res_periodic_handler() or PUT or POST.
  */
 static int32_t event_counter = 0;
+static int nbytes=1;
 
 static void
 res_get_handler(coap_message_t *request, coap_message_t *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
@@ -66,10 +70,19 @@ res_get_handler(coap_message_t *request, coap_message_t *response, uint8_t *buff
    * Otherwise the requests must be stored with the observer list and passed by coap_notify_subscribers().
    * This would be a TODO in the corresponding files in contiki/apps/erbium/!
    */
+  //printf("Nbytes,%d\n",NBYTES);
+  for (int x=0;x<nbytes;x++){
+    buffer[x]='A';
+  }
   coap_set_header_content_format(response, TEXT_PLAIN);
   coap_set_header_max_age(response, res_push.periodic->period / CLOCK_SECOND);
-  coap_set_payload(response, buffer, snprintf((char *)buffer, preferred_size, "VERY LONG EVENT %lu", (unsigned long) event_counter));
-
+//  coap_set_payload(response, buffer, snprintf((char *)buffer, preferred_size, "VE"));
+  coap_set_payload(response, buffer, nbytes);
+  nbytes++;
+  if (nbytes==38) {
+    nbytes=1;
+    printf("=,=\n");
+    }
   /* The coap_subscription_handler() will be called for observable resources by the REST framework. */
 }
 /*

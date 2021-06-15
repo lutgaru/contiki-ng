@@ -38,6 +38,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "sys/energest.h"
 #include <string.h>
 #include "contiki.h"
 #include "coap-engine.h"
@@ -54,16 +55,17 @@
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_APP
 rtimer_clock_t timerdiff[2];
+static struct etimer enertimer;
 /*
  * Resources to be activated need to be imported through the extern keyword.
  * The build system automatically compiles the resources in the corresponding sub-directory.
  */
 extern coap_resource_t
-  res_hello;
+  res_hello,
 //   res_mirror,
 //   res_chunks,
 //   res_separate,
-//   res_push,
+  res_push;
 //   res_event,
 //   res_sub,
 //   res_b1_sep_b2;
@@ -82,6 +84,12 @@ extern coap_resource_t
 // #include "dev/temperature-sensor.h"
 // extern coap_resource_t res_temperature;
 // #endif
+
+static unsigned long
+to_seconds(uint64_t time)
+{
+  return (unsigned long)(time / ENERGEST_SECOND);
+}
 
 PROCESS(er_example_server, "Erbium Example Server");
 AUTOSTART_PROCESSES(&er_example_server);
@@ -105,7 +113,7 @@ PROCESS_THREAD(er_example_server, ev, data)
   //coap_activate_resource(&res_mirror, "debug/mirror");
   //coap_activate_resource(&res_chunks, "test/chunks");
   //coap_activate_resource(&res_separate, "test/separate");
-  //coap_activate_resource(&res_push, "test/push");
+  coap_activate_resource(&res_push, "test/push");
 // #if PLATFORM_HAS_BUTTON
 //   coap_activate_resource(&res_event, "sensors/button");
 // #endif /* PLATFORM_HAS_BUTTON */
@@ -129,8 +137,32 @@ PROCESS_THREAD(er_example_server, ev, data)
 // #endif
 
   /* Define application-specific events here. */
+
+  etimer_set(&enertimer, CLOCK_SECOND * 10);
+
   while(1) {
     PROCESS_WAIT_EVENT();
+
+    if(etimer_expired(&enertimer)){
+      etimer_reset(&enertimer);
+
+      /* Update all energest times. */
+      energest_flush();
+
+      printf("\nEnergest:\n");
+      printf(" CPU          %4lus LPM      %4lus DEEP LPM %4lus  Total time %lus\n",
+            to_seconds(energest_type_time(ENERGEST_TYPE_CPU)),
+            to_seconds(energest_type_time(ENERGEST_TYPE_LPM)),
+            to_seconds(energest_type_time(ENERGEST_TYPE_DEEP_LPM)),
+            to_seconds(ENERGEST_GET_TOTAL_TIME()));
+      printf(" Radio LISTEN %4lus TRANSMIT %4lus OFF      %4lus\n",
+            to_seconds(energest_type_time(ENERGEST_TYPE_LISTEN)),
+            to_seconds(energest_type_time(ENERGEST_TYPE_TRANSMIT)),
+            to_seconds(ENERGEST_GET_TOTAL_TIME()
+                        - energest_type_time(ENERGEST_TYPE_TRANSMIT)
+                        - energest_type_time(ENERGEST_TYPE_LISTEN)));
+    }
+
 #if PLATFORM_HAS_BUTTON
 #if PLATFORM_SUPPORTS_BUTTON_HAL
     if(ev == button_hal_release_event) {

@@ -61,9 +61,9 @@ rtimer_clock_t timerdiff[2];
 extern coap_resource_t
   res_hello,
 //   res_mirror,
-  res_chunks;
+  res_chunks,
 //   res_separate,
-//   res_push,
+  res_push;
 //   res_event,
 //   res_sub,
 //   res_b1_sep_b2;
@@ -105,7 +105,7 @@ PROCESS_THREAD(er_example_server, ev, data)
   //coap_activate_resource(&res_mirror, "debug/mirror");
   coap_activate_resource(&res_chunks, "test/chunks");
   //coap_activate_resource(&res_separate, "test/separate");
-  //coap_activate_resource(&res_push, "test/push");
+  coap_activate_resource(&res_push, "test/push");
 // #if PLATFORM_HAS_BUTTON
 //   coap_activate_resource(&res_event, "sensors/button");
 // #endif /* PLATFORM_HAS_BUTTON */

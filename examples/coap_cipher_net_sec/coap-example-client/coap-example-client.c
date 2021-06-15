@@ -58,6 +58,10 @@
 #include "coap-log.h"
 #define LOG_MODULE "App"
 #define LOG_LEVEL  LOG_LEVEL_APP
+#define IN_HT 2
+#define NOT_EXIST 0
+#define EXIST 1
+#define CONNECTED 3
 
 /* FIXME: This server address is hard-coded for Cooja and link-local for unconnected border router. */
 //#define SERVER_EP "coaps://[fd00::212:4b00:a55:dd05]"
@@ -72,6 +76,7 @@ extern coap_resource_t
   test_metric;
 
 #define TOGGLE_INTERVAL 0.001
+#define NUMBERS_OF_NODES 3
 
 PROCESS(er_example_client, "Erbium Example Client");
 AUTOSTART_PROCESSES(&er_example_client);
@@ -127,98 +132,57 @@ client_chunk_handler(coap_message_t *response)
 PROCESS_THREAD(er_example_client, ev, data)
 {
   PROCESS_BEGIN();
-  static coap_endpoint_t server_ep;
+  static coap_endpoint_t server_ep[NUMBERS_OF_NODES];
   static uint8_t connect_intent = 0;
   static uint8_t muestras = 0;
+  static uint8_t node_conn=0;
+  static uint8_t status_node[NUMBERS_OF_NODES];
+  static uint8_t server_epp[NUMBERS_OF_NODES][26];
   NETSTACK_RADIO.set_value(RADIO_PARAM_TXPOWER,-21);
+  //memset(status_node,0,NUMBERS_OF_NODES);
   coap_activate_resource(&test_metric, "test/metric");
-  //NETSTACK_ROUTING.root_start();
+  NETSTACK_ROUTING.root_start();
   static coap_message_t request[1];      /* This way the packet can be treated as pointer as usual. */
-
-  //NETSTACK_ROUTING.root_start();
-  coap_endpoint_parse(SERVER_EP, strlen(SERVER_EP), &server_ep);
-  coap_endpoint_connect(&server_ep);
+  //coap_endpoint_parse(SERVER_EP, strlen(SERVER_EP), &server_ep);
+  //coap_endpoint_connect(&server_ep);
+  
   printf("inicio:%lu\n",RTIMER_NOW());
-
   etimer_set(&et, TOGGLE_INTERVAL * CLOCK_SECOND);
-  //etimer_reset(&et);
-
-#if PLATFORM_HAS_BUTTON
-#if !PLATFORM_SUPPORTS_BUTTON_HAL
-  SENSORS_ACTIVATE(button_sensor);
-#endif
-  printf("Press a button to request %s\n", service_urls[uri_switch]);
-#endif /* PLATFORM_HAS_BUTTON */
 
   while(1) {
     PROCESS_YIELD();
-
-    if(etimer_expired(&et) && coap_endpoint_is_connected(&server_ep)) {
-      printf("seguro:%lu\n",RTIMER_NOW());
-      printf("second: %lu\n",RTIMER_SECOND);
-      printf("%d\n",coap_endpoint_is_connected(&server_ep));
-      printf("--Toggle timer--\n");
-      
-      coap_init_message(request, COAP_TYPE_NON, COAP_GET, 0);
-      coap_set_header_uri_path(request, service_urls[1]);
-
-      const char msg[] = "Toggle!";
-
-      coap_set_payload(request, (uint8_t *)msg, sizeof(msg) - 1);
-
-      LOG_INFO_COAP_EP(&server_ep);
-      LOG_INFO_("\n");
-
-      COAP_BLOCKING_REQUEST(&server_ep, request, client_chunk_handler);
-
-      printf("\n--Done--\n");
-      if(muestras<0){
-        muestras++;
-        etimer_reset(&et);
-      }
-
-    }
-    else if(etimer_expired(&et)){
+    if(etimer_expired(&et)){
       if(uip_sr_num_nodes() > 0) {
-      uip_sr_node_t *link;
-      uip_ipaddr_t child_ipaddr;
-      /* Our routing links */
-      link = uip_sr_node_head();
-      while(link != NULL) {
-        NETSTACK_ROUTING.get_sr_node_ipaddr(&child_ipaddr, link);
-        if((child_ipaddr.u8[15] == server_ep.ipaddr.u8[15])){
-          if ((connect_intent == 0)) {
-            LOG_INFO("alcanzable\n");
-            coap_endpoint_connect(&server_ep);
-            uiplib_ipaddr_print(&child_ipaddr);
-            connect_intent=1;
-            break;
-          }
-          else{
-            break;
-          }
-          // else if (connect_intent == 10000) {
-          //   printf("reintentando?\n");
-          //   printf("%d \n",coap_endpoint_connect(&server_ep));
-          //   connect_intent=1;
-          //   break;
-          // }
-          // else if (connect_intent == 9000) {
-          //   printf("se repite?\n");
-          //   coap_endpoint_disconnect(&server_ep);
-          //   connect_intent++;
-          //   break;
-          // }
-          // else{
-          //   connect_intent++;
-          //   break;
-          // }
-          //LOG_INFO("alcanzable\n");
-          
-        }
+        uip_sr_node_t *link;
+        uip_ipaddr_t child_ipaddr;
+        int node=1;
+        int n;
+        /* Our routing links */
+        link = uip_sr_node_head();
         link = uip_sr_node_next(link);
+        while(link != NULL) {
+          NETSTACK_ROUTING.get_sr_node_ipaddr(&child_ipaddr, link);
+          
+          if (status_node[node]==NOT_EXIST){
+            n = snprintf(server_epp, 26, "coaps://[fd00::200:%u:%u:%u]",
+                  child_ipaddr.u8[13], child_ipaddr.u8[14], child_ipaddr.u8[15]);
+            printf("ep: %s, %d\n",server_epp,status_node[node]);
+            coap_endpoint_parse(server_epp, strlen(server_epp), &server_ep[node]);
+            status_node[node]=EXIST;
+          }
+          if (!coap_endpoint_is_connected(&server_ep[node]) && status_node[node]==EXIST){
+            coap_endpoint_connect(&server_ep[node]);
+            status_node[node]=IN_HT;
+          }
+          else if(coap_endpoint_is_connected(&server_ep[node])&& status_node[node]!=CONNECTED){
+            printf("seguro %d: %lu\n",node,RTIMER_NOW());
+            status_node[node]=CONNECTED;
+          }
+          
+          node++;
+          link = uip_sr_node_next(link);
+        }
       }
-      } 
       etimer_reset(&et);
     }
   }
