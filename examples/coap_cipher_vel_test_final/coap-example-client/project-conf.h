@@ -40,16 +40,16 @@
 #define PROJECT_CONF_H_
 //#include <bits/stdint-uintn.h>
 #include <stdint.h>
-//#define LOG_CONF_LEVEL_COAP		LOG_LEVEL_NONE
+//#define LOG_CONF_LEVEL_COAP		LOG_LEVEL_DBG
 #define LOG_LEVEL_APP LOG_LEVEL_NONE
 //#define LOG_LEVEL_RPL LOG_LEVEL_DBG
 //#define LOG_CONF_LEVEL_MAC LOG_LEVEL_DBG
 #define NBR_TABLE_CONF_MAX_NEIGHBORS 10
 # define  ENERGEST_CONF_ON  1
-#define FINAL_TEST 1
 
 /* Enable client-side support for COAP observe */
 #define COAP_OBSERVE_CLIENT            1
 #define COAP_DTLS_PSK_DEFAULT_IDENTITY "user"
 #define COAP_DTLS_PSK_DEFAULT_KEY "password"
+#define FINAL_TEST 1
 #endif /* PROJECT_CONF_H_ */

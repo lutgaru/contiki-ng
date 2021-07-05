@@ -383,7 +383,22 @@ coap_sendto(const coap_endpoint_t *ep, const uint8_t *data, uint16_t length)
     LOG_WARN_(" not connected - dropping packet\n");
     return -1;
   }
-
+  
+  #if FINAL_TEST
+  extern rtimer_clock_t timerlog[10];
+  char id='n';
+  for(int x=0;x<length;x++){
+    if(data[x]==0xff){
+      id=data[x+1];
+      break;
+    }
+  }
+  timerlog[1]=data[3] | data[2] << 8;
+  timerlog[2]=RTIMER_NOW();
+  //printf("\nid=%d\n",data[3] | data[2] << 8);
+  #endif
+  
+  
 #ifdef WITH_DTLS
   if(coap_endpoint_is_secure(ep)) {
     if(dtls_context) {
@@ -392,6 +407,12 @@ coap_sendto(const coap_endpoint_t *ep, const uint8_t *data, uint16_t length)
       ret = dtls_write(dtls_context, (session_t *)ep, (uint8_t *)data, length);
       LOG_INFO("sent DTLS to ");
       LOG_INFO_COAP_EP(ep);
+      #if FINAL_TEST
+      //extern rtimer_clock_t timerlog[10];
+      //timerlog[1]=data[3] | data[2] << 8;
+      timerlog[5]=RTIMER_NOW();
+      printf("%c,%lu,%lu,%lu,%lu,%lu\n",id,timerlog[1],timerlog[2],timerlog[3],timerlog[4],timerlog[5]);
+      #endif
       if(ret < 0) {
         LOG_INFO_(" - error %d\n", ret);
       } else {
@@ -406,6 +427,12 @@ coap_sendto(const coap_endpoint_t *ep, const uint8_t *data, uint16_t length)
 #endif /* WITH_DTLS */
 
   uip_udp_packet_sendto(udp_conn, data, length, &ep->ipaddr, ep->port);
+  #if FINAL_TEST
+  //extern rtimer_clock_t timerlog[10];
+  //timerlog[1]=data[3] | data[2] << 8;
+  timerlog[5]=RTIMER_NOW();
+  printf("%c,%lu,%lu,%lu\n",id,timerlog[1],timerlog[2],timerlog[5]);
+  #endif
   LOG_INFO("sent to ");
   LOG_INFO_COAP_EP(ep);
   LOG_INFO_(" %u bytes\n", length);

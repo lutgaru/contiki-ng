@@ -31,25 +31,40 @@
 
 /**
  * \file
- *      Erbium (Er) example project configuration.
+ *      Example resource
  * \author
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
  */
 
-#ifndef PROJECT_CONF_H_
-#define PROJECT_CONF_H_
-//#include <bits/stdint-uintn.h>
-#include <stdint.h>
-//#define LOG_CONF_LEVEL_COAP		LOG_LEVEL_NONE
-#define LOG_LEVEL_APP LOG_LEVEL_NONE
-//#define LOG_LEVEL_RPL LOG_LEVEL_DBG
-//#define LOG_CONF_LEVEL_MAC LOG_LEVEL_DBG
-#define NBR_TABLE_CONF_MAX_NEIGHBORS 10
-# define  ENERGEST_CONF_ON  1
-#define FINAL_TEST 1
+#include <stdio.h>
+#include <string.h>
+#include "coap-engine.h"
 
-/* Enable client-side support for COAP observe */
-#define COAP_OBSERVE_CLIENT            1
-#define COAP_DTLS_PSK_DEFAULT_IDENTITY "user"
-#define COAP_DTLS_PSK_DEFAULT_KEY "password"
-#endif /* PROJECT_CONF_H_ */
+static void res_get_handler(coap_message_t *request, coap_message_t *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
+
+/*
+ * Example for a resource that also handles all its sub-resources.
+ * Use coap_get_url() to multiplex the handling of the request depending on the Uri-Path.
+ */
+PARENT_RESOURCE(res_sub,
+                "title=\"Sub-resource demo\"",
+                res_get_handler,
+                NULL,
+                NULL,
+                NULL);
+
+static void
+res_get_handler(coap_message_t *request, coap_message_t *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+{
+  coap_set_header_content_format(response, TEXT_PLAIN);
+
+  const char *uri_path = NULL;
+  int len = coap_get_header_uri_path(request, &uri_path);
+  int base_len = strlen(res_sub.url);
+
+  if(len == base_len) {
+    snprintf((char *)buffer, COAP_MAX_CHUNK_SIZE, "Request any sub-resource of /%s", res_sub.url);
+  } else {
+    snprintf((char *)buffer, COAP_MAX_CHUNK_SIZE, ".%.*s", len - base_len, uri_path + base_len);
+  } coap_set_payload(response, buffer, strlen((char *)buffer));
+}

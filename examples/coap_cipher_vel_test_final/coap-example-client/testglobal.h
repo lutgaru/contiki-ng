@@ -36,20 +36,9 @@
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
  */
 
-#ifndef PROJECT_CONF_H_
-#define PROJECT_CONF_H_
-//#include <bits/stdint-uintn.h>
-#include <stdint.h>
-//#define LOG_CONF_LEVEL_COAP		LOG_LEVEL_NONE
-#define LOG_LEVEL_APP LOG_LEVEL_NONE
-//#define LOG_LEVEL_RPL LOG_LEVEL_DBG
-//#define LOG_CONF_LEVEL_MAC LOG_LEVEL_DBG
-#define NBR_TABLE_CONF_MAX_NEIGHBORS 10
-# define  ENERGEST_CONF_ON  1
-#define FINAL_TEST 1
+#ifndef TESTGLOBAL_H_
+#define TESTGLOBAL_H_
+#include "rtimer.h"
+extern rtimer_clock_t timerdiff[2];
 
-/* Enable client-side support for COAP observe */
-#define COAP_OBSERVE_CLIENT            1
-#define COAP_DTLS_PSK_DEFAULT_IDENTITY "user"
-#define COAP_DTLS_PSK_DEFAULT_KEY "password"
-#endif /* PROJECT_CONF_H_ */
+#endif /* TESTGLOBAL_H_ */

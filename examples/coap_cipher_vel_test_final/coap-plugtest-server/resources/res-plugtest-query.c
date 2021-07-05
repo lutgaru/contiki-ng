@@ -31,25 +31,50 @@
 
 /**
  * \file
- *      Erbium (Er) example project configuration.
+ *      ETSI Plugtest resource
  * \author
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
  */
 
-#ifndef PROJECT_CONF_H_
-#define PROJECT_CONF_H_
-//#include <bits/stdint-uintn.h>
-#include <stdint.h>
-//#define LOG_CONF_LEVEL_COAP		LOG_LEVEL_NONE
-#define LOG_LEVEL_APP LOG_LEVEL_NONE
-//#define LOG_LEVEL_RPL LOG_LEVEL_DBG
-//#define LOG_CONF_LEVEL_MAC LOG_LEVEL_DBG
-#define NBR_TABLE_CONF_MAX_NEIGHBORS 10
-# define  ENERGEST_CONF_ON  1
-#define FINAL_TEST 1
+#include <stdio.h>
+#include <string.h>
+#include "coap-engine.h"
+#include "coap.h"
 
-/* Enable client-side support for COAP observe */
-#define COAP_OBSERVE_CLIENT            1
-#define COAP_DTLS_PSK_DEFAULT_IDENTITY "user"
-#define COAP_DTLS_PSK_DEFAULT_KEY "password"
-#endif /* PROJECT_CONF_H_ */
+/* Log configuration */
+#include "sys/log.h"
+#define LOG_MODULE "Plugtest"
+#define LOG_LEVEL LOG_LEVEL_PLUGTEST
+
+static void res_get_handler(coap_message_t *request, coap_message_t *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
+
+RESOURCE(res_plugtest_query,
+         "title=\"Resource accepting query parameters\"",
+         res_get_handler,
+         NULL,
+         NULL,
+         NULL);
+
+static void
+res_get_handler(coap_message_t *request, coap_message_t *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+{
+  coap_message_t *const coap_req = (coap_message_t *)request;
+  int len = 0;
+  const char *query = NULL;
+
+  LOG_DBG(
+    "/query          GET (%s %u)\n", coap_req->type == COAP_TYPE_CON ? "CON" : "NON", coap_req->mid);
+
+  if((len = coap_get_header_uri_query(request, &query))) {
+    LOG_DBG("Query: %.*s\n", len, query);
+    /* Code 2.05 CONTENT is default. */
+  }
+  coap_set_header_content_format(response,
+                                 TEXT_PLAIN);
+  coap_set_payload(
+    response,
+    buffer,
+    snprintf((char *)buffer, MAX_PLUGFEST_PAYLOAD,
+             "Type: %u\nCode: %u\nMID: %u\nQuery: %.*s", coap_req->type,
+             coap_req->code, coap_req->mid, len, query));
+}

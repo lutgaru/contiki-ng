@@ -55,7 +55,9 @@
 #else
 #include "dev/button-sensor.h"
 #endif
-
+#ifndef WITHOUTCIPHER
+#define WITHOUTCIPHER 0
+#endif
 /* Log configuration */
 #include "coap-log.h"
 #define LOG_MODULE "App"
@@ -65,7 +67,6 @@
 #define EXIST 1
 #define CONNECTED 3
 static coap_observee_t *obs;
-rtimer_clock_t timerlog[10];
 /* FIXME: This server address is hard-coded for Cooja and link-local for unconnected border router. */
 #define SERVER_EP "coaps://[fd00::212:4b00:a55:dd05]"
 //#define SERVER_EP "coaps://[fe80::212:4b00:a55:dd05]"
@@ -80,17 +81,25 @@ extern coap_resource_t
 
 #define TOGGLE_INTERVAL 0.001
 #define NUMBERS_OF_NODES 1
+#define PRESS_INTERVAL 30
+#define TEMP_INTERVAL 20
+#define ENER_INTERVAL 10
 
 PROCESS(er_example_client, "Erbium Example Client");
 AUTOSTART_PROCESSES(&er_example_client);
 
-static struct etimer et,enertimer;
-rtimer_clock_t timerdiff[2];
+static struct etimer et,temptimer,prestimer;
+static struct ctimer enertimer;
+static coap_endpoint_t *temp_ep,*oxi_ep,*press_ep;
+static int oximetria=0,temperatura=0,presion=0;
+rtimer_clock_t timerlog[10];
+static rtimer_clock_t temprtime[3];
+static rtimer_clock_t presrtime[3];
 /* Example URIs that can be queried. */
 #define NUMBER_OF_URLS 5
 /* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
 char *service_urls[NUMBER_OF_URLS] =
-{ "/test/hello", "/actuators/toggle", "battery/", "error/in//path", "/test/push" };
+{ "/test/hello", "/test/separate", "sensors/temperature", "error/in//path", "/test/push" };
 #if PLATFORM_HAS_BUTTON
 static int uri_switch = 0;
 #endif
@@ -118,25 +127,33 @@ ds6_nbr_state_to_str(uint8_t state)
 /*
  * Handle the response to the observe request and the following notifications
  */
+uint16_t get_mid_packet(coap_message_t *coap_pkt){
+  return coap_pkt->mid;
+}
+
 static void
 notification_callback(coap_observee_t *obs, void *notification,
                       coap_notification_flag_t flag)
 {
   int len = 0;
   const uint8_t *payload = NULL;
+  uint16_t mid;
 
-  printf("Notification handler\n");
-  printf("Observee URI: %s\n", obs->url);
+  //printf("Notification handler\n");
+  //printf("Observee URI: %s\n", obs->url);
   if(notification) {
     len = coap_get_payload(notification, &payload);
+    mid=get_mid_packet(notification);
   }
   switch(flag) {
   case NOTIFICATION_OK:
-    printf("NOTIFICATION OK: %*s\n", len, (char *)payload);
+    printf("%c,%d,%d,%ul\n",payload[0],len,mid,RTIMER_NOW());
+    //printf("NOTIFICATION OK: %*s\n", len, (char *)payload);
     if(len==37) printf("=,=\n");
     break;
   case OBSERVE_OK: /* server accepeted observation request */
-    printf("OBSERVE_OK: %*s\n", len, (char *)payload);
+    printf("%c,%d,%d,%ul\n",payload[0],len,mid,RTIMER_NOW());
+    //printf("OBSERVE_OK: %*s\n", len, (char *)payload);
     break;
   case OBSERVE_NOT_SUPPORTED:
     printf("OBSERVE_NOT_SUPPORTED: %*s\n", len, (char *)payload);
@@ -158,7 +175,49 @@ notification_callback(coap_observee_t *obs, void *notification,
 static unsigned long
 to_seconds(uint64_t time)
 {
-  return (unsigned long)(time / ENERGEST_SECOND);
+  return (unsigned long)(time / (ENERGEST_SECOND/100));
+}
+
+void 
+print_energest_callback(){
+  
+      ctimer_reset(&enertimer);
+
+      /* Update all energest times. */
+      energest_flush();
+
+      //printf("\nEnergest:\n");
+      printf("EC,%4lu,%4lu,%4lu,%lu\n",
+            to_seconds(energest_type_time(ENERGEST_TYPE_CPU)),
+            to_seconds(energest_type_time(ENERGEST_TYPE_LPM)),
+            to_seconds(energest_type_time(ENERGEST_TYPE_DEEP_LPM)),
+            to_seconds(ENERGEST_GET_TOTAL_TIME()));
+      printf("ER,%4lu,%4lu,%4lu\n",
+            to_seconds(energest_type_time(ENERGEST_TYPE_LISTEN)),
+            to_seconds(energest_type_time(ENERGEST_TYPE_TRANSMIT)),
+            to_seconds(ENERGEST_GET_TOTAL_TIME()
+                        - energest_type_time(ENERGEST_TYPE_TRANSMIT)
+                        - energest_type_time(ENERGEST_TYPE_LISTEN)));
+  
+}
+
+void
+process_temp(coap_message_t *response){
+  const uint8_t *chunk;
+  int len = coap_get_payload(response, &chunk);
+  temprtime[1]=RTIMER_NOW();
+  printf("|%.*s,%lu,%lu\n", len, (char *)chunk,temprtime[0],temprtime[1]);
+  return;
+}
+
+
+void 
+process_pressure(coap_message_t *response){
+  const uint8_t *chunk;
+  int len = coap_get_payload(response, &chunk);
+  presrtime[1]=RTIMER_NOW();
+  printf("|%.*s,%lu,%lu\n", len, (char *)chunk,presrtime[0],presrtime[1]);
+  return;
 }
 
 /* This function is will be passed to COAP_BLOCKING_REQUEST() to handle responses. */
@@ -173,9 +232,29 @@ client_chunk_handler(coap_message_t *response)
   }
 
   int len = coap_get_payload(response, &chunk);
-  printf("%d",len);
-  if(len==37) printf("=,=\n");
-  printf("|%.*s", len, (char *)chunk);
+  //printf("%d",len);
+  //if(len==37) printf("=,=\n");
+  printf("|%.*s\n", len, (char *)chunk);
+  if(len<=0){
+    return;
+  }
+  if(chunk[0]=='o'){
+    printf("es un oximetro jeje\n");
+    obs = coap_obs_request_registration(response->src_ep,
+            service_urls[4], notification_callback, NULL);
+  }
+  else if(chunk[0]=='t'){
+    printf("es un termometro\n");
+    temp_ep=response->src_ep;
+    temperatura=1;
+    etimer_set(&temptimer, TEMP_INTERVAL * CLOCK_SECOND);
+  }
+  else if(chunk[0]=='p'){
+    printf("es un esfingo\n");
+    press_ep=response->src_ep;
+    presion=1;
+    etimer_set(&prestimer, PRESS_INTERVAL * CLOCK_SECOND);
+  }
 }
 PROCESS_THREAD(er_example_client, ev, data)
 {
@@ -196,7 +275,9 @@ PROCESS_THREAD(er_example_client, ev, data)
   //coap_endpoint_parse(SERVER_EP, strlen(SERVER_EP), &server_ep);
   //coap_endpoint_connect(&server_ep);
   printf("inicio:%lu\n",RTIMER_NOW());
-  etimer_set(&enertimer, CLOCK_SECOND * 10);
+  ctimer_set(&enertimer, CLOCK_SECOND * ENER_INTERVAL,print_energest_callback,NULL);
+  //etimer_set(&temptimer, CLOCK_SECOND * TEMP_INTERVAL);
+  //etimer_set(&prestimer, CLOCK_SECOND * PRESS_INTERVAL);
 
   etimer_set(&et, TOGGLE_INTERVAL * CLOCK_SECOND);
   //etimer_reset(&et);
@@ -211,29 +292,11 @@ PROCESS_THREAD(er_example_client, ev, data)
   while(1) {
     PROCESS_YIELD();
 
-    if(etimer_expired(&enertimer)){
-      etimer_reset(&enertimer);
+    
 
-      /* Update all energest times. */
-      energest_flush();
-
-      printf("\nEnergest:\n");
-      printf(" CPU          %4lus LPM      %4lus DEEP LPM %4lus  Total time %lus\n",
-            to_seconds(energest_type_time(ENERGEST_TYPE_CPU)),
-            to_seconds(energest_type_time(ENERGEST_TYPE_LPM)),
-            to_seconds(energest_type_time(ENERGEST_TYPE_DEEP_LPM)),
-            to_seconds(ENERGEST_GET_TOTAL_TIME()));
-      printf(" Radio LISTEN %4lus TRANSMIT %4lus OFF      %4lus\n",
-            to_seconds(energest_type_time(ENERGEST_TYPE_LISTEN)),
-            to_seconds(energest_type_time(ENERGEST_TYPE_TRANSMIT)),
-            to_seconds(ENERGEST_GET_TOTAL_TIME()
-                        - energest_type_time(ENERGEST_TYPE_TRANSMIT)
-                        - energest_type_time(ENERGEST_TYPE_LISTEN)));
-    }
-
-    if(etimer_expired(&et)){
+    if(etimer_expired(&et) && all_conected<NUMBERS_OF_NODES){
       //printf("Terminotimer");
-      if(uip_sr_num_nodes() > 0 && all_conected<NUMBERS_OF_NODES) {
+      if(uip_sr_num_nodes() > 0 ) {
         uip_sr_node_t *link;
         uip_ipaddr_t child_ipaddr;
         static uint8_t status_node[NUMBERS_OF_NODES];
@@ -244,12 +307,17 @@ PROCESS_THREAD(er_example_client, ev, data)
         link = uip_sr_node_head();
         link = uip_sr_node_next(link);
         //printf("punto1");
-        while(link != NULL ) {
+        while(link != NULL  && all_conected<NUMBERS_OF_NODES) {
+          //printf("si\n");
           NETSTACK_ROUTING.get_sr_node_ipaddr(&child_ipaddr, link);
-          
+          //printf("si\n");
           if (status_node[node-1]==NOT_EXIST){
             int lip=uiplib_ipaddr_snprint(server_epp_temp,40,&child_ipaddr);
+            #if WITHOUTCIPHER
+            n = snprintf(server_epp[node-1], 40, "coap://[%s]",server_epp_temp);
+            #else
             n = snprintf(server_epp[node-1], 40, "coaps://[%s]",server_epp_temp);
+            #endif
             printf("ep: %s, %d\n",server_epp[node-1],status_node[node-1]);
             coap_endpoint_parse(server_epp[node-1], n, &server_ep[node-1]);
             status_node[node-1]=EXIST;
@@ -263,8 +331,15 @@ PROCESS_THREAD(er_example_client, ev, data)
             printf("seguro %d: %lu\n",node,RTIMER_NOW());
             status_node[node-1]=CONNECTED;
             all_conected++;
+
+            coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+            coap_set_header_uri_path(request, service_urls[0]);
+            const char msg[] = "indetify";
+            coap_set_payload(request, (uint8_t *)msg, sizeof(msg) - 1);
+            COAP_BLOCKING_REQUEST(&server_ep[node-1], request, client_chunk_handler);
+
           }
-          
+
           node++;
           link = uip_sr_node_next(link);
         }
@@ -273,14 +348,51 @@ PROCESS_THREAD(er_example_client, ev, data)
       else if(uip_sr_num_nodes() <= 0){
         etimer_reset(&et);
       }
-      else{
-        obs = coap_obs_request_registration(&server_ep[0],
-                                        service_urls[4], notification_callback, NULL);
-        printf("#,#");
-      }
+      // else if(all_conected==NUMBERS_OF_NODES) {
+      //   //obs = coap_obs_request_registration(&server_ep[0],
+      //   //                                service_urls[4], notification_callback, NULL);
+      //   coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+      //   coap_set_header_uri_path(request, service_urls[0]);
+      //   const char msg[] = "indetify";
+      //   coap_set_payload(request, (uint8_t *)msg, sizeof(msg) - 1);
+      //   for(int nodei=0;nodei<=NUMBERS_OF_NODES;nodei++){
+      //     COAP_BLOCKING_REQUEST(&server_ep[nodei], request, client_chunk_handler);
+      //   }
+      //   printf("#,#\n");
+      // }
 
       
     }
+    if(etimer_expired(&temptimer) && temperatura){
+      coap_message_t request[1];   
+      etimer_reset(&temptimer);
+      char server_epp_temp[40];
+      printf("pidiendo temperatura\n");
+      coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+      coap_set_header_uri_path(request, service_urls[2]);
+      temprtime[0]=RTIMER_NOW();
+      const char msg[] = "t";
+      coap_set_payload(request, (uint8_t *)msg, sizeof(msg) - 1);
+      //uiplib_ipaddr_snprint(server_epp_temp,40,temp_ep->ipaddr);
+      //printf("%s",server_epp_temp);
+      COAP_BLOCKING_REQUEST(temp_ep, request, process_temp);
+    }
+    if(etimer_expired(&prestimer) && presion){
+      coap_message_t request[1];   
+      etimer_reset(&prestimer);
+      char server_epp_temp[40];
+      printf("pidiendo presion\n");
+      coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+      coap_set_header_uri_path(request, service_urls[1]);
+      presrtime[0]=RTIMER_NOW();
+      const char msg[] = "p";
+      coap_set_payload(request, (uint8_t *)msg, sizeof(msg) - 1);
+      //uiplib_ipaddr_snprint(server_epp_temp,40,temp_ep->ipaddr);
+      //printf("%s",server_epp_temp);
+      COAP_BLOCKING_REQUEST(press_ep, request, process_pressure);
+      
+    }
+
     }
 
   PROCESS_END();

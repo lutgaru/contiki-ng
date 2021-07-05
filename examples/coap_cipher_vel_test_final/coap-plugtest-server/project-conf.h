@@ -31,25 +31,22 @@
 
 /**
  * \file
- *      Erbium (Er) example project configuration.
+ *      Erbium (Er) CoAP client example
  * \author
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
  */
 
 #ifndef PROJECT_CONF_H_
 #define PROJECT_CONF_H_
-//#include <bits/stdint-uintn.h>
-#include <stdint.h>
-//#define LOG_CONF_LEVEL_COAP		LOG_LEVEL_NONE
-#define LOG_LEVEL_APP LOG_LEVEL_NONE
-//#define LOG_LEVEL_RPL LOG_LEVEL_DBG
-//#define LOG_CONF_LEVEL_MAC LOG_LEVEL_DBG
-#define NBR_TABLE_CONF_MAX_NEIGHBORS 10
-# define  ENERGEST_CONF_ON  1
-#define FINAL_TEST 1
 
-/* Enable client-side support for COAP observe */
-#define COAP_OBSERVE_CLIENT            1
-#define COAP_DTLS_PSK_DEFAULT_IDENTITY "user"
-#define COAP_DTLS_PSK_DEFAULT_KEY "password"
+#define LOG_LEVEL_PLUGTEST LOG_LEVEL_DBG
+
+/* double expansion */
+#define TO_STRING2(x)  # x
+#define TO_STRING(x)  TO_STRING2(x)
+
+#define MAX_PLUGFEST_PAYLOAD 64 + 1       /* +1 for the terminating zero, which is not transmitted */
+#define MAX_PLUGFEST_BODY    2048
+#define CHUNKS_TOTAL         2012
+
 #endif /* PROJECT_CONF_H_ */

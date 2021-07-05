@@ -31,25 +31,45 @@
 
 /**
  * \file
- *      Erbium (Er) example project configuration.
+ *      ETSI Plugtest resource
  * \author
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
  */
 
-#ifndef PROJECT_CONF_H_
-#define PROJECT_CONF_H_
-//#include <bits/stdint-uintn.h>
-#include <stdint.h>
-//#define LOG_CONF_LEVEL_COAP		LOG_LEVEL_NONE
-#define LOG_LEVEL_APP LOG_LEVEL_NONE
-//#define LOG_LEVEL_RPL LOG_LEVEL_DBG
-//#define LOG_CONF_LEVEL_MAC LOG_LEVEL_DBG
-#define NBR_TABLE_CONF_MAX_NEIGHBORS 10
-# define  ENERGEST_CONF_ON  1
-#define FINAL_TEST 1
+#include <string.h>
+#include "coap-engine.h"
+#include "coap.h"
 
-/* Enable client-side support for COAP observe */
-#define COAP_OBSERVE_CLIENT            1
-#define COAP_DTLS_PSK_DEFAULT_IDENTITY "user"
-#define COAP_DTLS_PSK_DEFAULT_KEY "password"
-#endif /* PROJECT_CONF_H_ */
+/* Log configuration */
+#include "sys/log.h"
+#define LOG_MODULE "Plugtest"
+#define LOG_LEVEL LOG_LEVEL_PLUGTEST
+
+static void res_get_handler(coap_message_t *request, coap_message_t *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
+
+RESOURCE(res_plugtest_link1,
+         "rt=\"Type1 Type2\";if=\"If1\"",
+         res_get_handler,
+         NULL,
+         NULL,
+         NULL);
+RESOURCE(res_plugtest_link2,
+         "rt=\"Type2 Type3\";if=\"If2\"",
+         res_get_handler,
+         NULL,
+         NULL,
+         NULL);
+RESOURCE(res_plugtest_link3,
+         "rt=\"Type1 Type3\";if=\"foo\"",
+         res_get_handler,
+         NULL,
+         NULL,
+         NULL);
+
+static void
+res_get_handler(coap_message_t *request, coap_message_t *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+{
+  const char *msg = "Dummy link";
+  coap_set_header_content_format(response, TEXT_PLAIN);
+  coap_set_payload(response, msg, strlen(msg));
+}

@@ -31,25 +31,54 @@
 
 /**
  * \file
- *      Erbium (Er) example project configuration.
+ *      ETSI Plugtest resource
  * \author
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
  */
 
-#ifndef PROJECT_CONF_H_
-#define PROJECT_CONF_H_
-//#include <bits/stdint-uintn.h>
-#include <stdint.h>
-//#define LOG_CONF_LEVEL_COAP		LOG_LEVEL_NONE
-#define LOG_LEVEL_APP LOG_LEVEL_NONE
-//#define LOG_LEVEL_RPL LOG_LEVEL_DBG
-//#define LOG_CONF_LEVEL_MAC LOG_LEVEL_DBG
-#define NBR_TABLE_CONF_MAX_NEIGHBORS 10
-# define  ENERGEST_CONF_ON  1
-#define FINAL_TEST 1
+#include <string.h>
+#include "coap-engine.h"
+#include "coap.h"
 
-/* Enable client-side support for COAP observe */
-#define COAP_OBSERVE_CLIENT            1
-#define COAP_DTLS_PSK_DEFAULT_IDENTITY "user"
-#define COAP_DTLS_PSK_DEFAULT_KEY "password"
-#endif /* PROJECT_CONF_H_ */
+/* Log configuration */
+#include "sys/log.h"
+#define LOG_MODULE "Plugtest"
+#define LOG_LEVEL LOG_LEVEL_PLUGTEST
+
+static void res_put_handler(coap_message_t *request, coap_message_t *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
+static void res_delete_handler(coap_message_t *request, coap_message_t *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
+
+RESOURCE(res_plugtest_create1,
+         "title=\"Creates on PUT\"",
+         NULL,
+         NULL,
+         res_put_handler,
+         res_delete_handler);
+
+static uint8_t create1_exists = 0;
+
+static void
+res_put_handler(coap_message_t *request, coap_message_t *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+{
+  LOG_DBG("/create1       PUT");
+
+  if(coap_get_header_if_none_match(request)) {
+    if(!create1_exists) {
+      coap_set_status_code(response, CREATED_2_01);
+
+      create1_exists = 1;
+    } else {
+      coap_set_status_code(response, PRECONDITION_FAILED_4_12);
+    }
+  } else {
+    coap_set_status_code(response, CHANGED_2_04);
+  }
+}
+static void
+res_delete_handler(coap_message_t *request, coap_message_t *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+{
+  LOG_DBG("/create1       DELETE ");
+  coap_set_status_code(response, DELETED_2_02);
+
+  create1_exists = 0;
+}

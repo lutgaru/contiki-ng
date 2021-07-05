@@ -60,9 +60,9 @@
 #define LOG_LEVEL  LOG_LEVEL_APP
 
 /* FIXME: This server address is hard-coded for Cooja and link-local for unconnected border router. */
-#define SERVER_EP "coaps://[fd00::212:4b00:a55:dd05]"
-//#define SERVER_EP "coaps://[fd00::200:0:0:1]"
-//#define SERVER_EP "coaps://[fd00::203:3:3:3]"
+//#define SERVER_EP "coaps://[fd00::212:4b00:a55:dd05]"
+#define SERVER_EP "coaps://[fd00::200:0:0:1]"
+//#define SERVER_EP "coaps://[fd00::202:2:2:2]"
 //#define SERVER_EP "coaps://[fd00::200:0:0:1]"
 static struct rtimer timer_rtimer;
 static int second_counter=0;
@@ -125,6 +125,7 @@ PROCESS_THREAD(er_example_client, ev, data)
   PROCESS_BEGIN();
   static coap_endpoint_t server_ep;
   static uint8_t connect_intent = 0;
+  NETSTACK_RADIO.set_value(RADIO_PARAM_TXPOWER,-21);
   coap_activate_resource(&test_metric, "test/metric");
   NETSTACK_ROUTING.root_start();
   static coap_message_t request[1];      /* This way the packet can be treated as pointer as usual. */
